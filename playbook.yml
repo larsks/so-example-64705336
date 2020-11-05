@@ -1,0 +1,21 @@
+- hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: read data from vaulted file
+      command: >-
+        ansible-vault view users.txt
+      register: cleartext
+
+    - name: update user1 password
+      set_fact:
+        newtext: >-
+          {{ newtext + [item|regex_replace('user1:.*', 'user1:"newsecret"')] }}
+      loop: "{{ cleartext.stdout_lines }}"
+      vars:
+        newtext: []
+
+    - name: write data to file
+      command: >-
+        ansible-vault encrypt --output users.txt
+      args:
+        stdin: "{{ '\n'.join(newtext) }}"
